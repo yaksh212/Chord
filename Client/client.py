@@ -43,7 +43,9 @@ try:
 	s.connect((host, port))
 	print "Connection Established\n"
 	reply=(s.recv(1024))
-	print "Message from Server:",reply
+	# time.sleep(5)
+	print "Message from Server:"
+	print reply
 	s.send(j_dump)
 	reply=json.loads(s.recv(1024))
 	print"Reply from Server:"
@@ -51,7 +53,10 @@ try:
 
 except:
 	e = sys.exc_info()[0]
+	print "Closing Connection due to Exception"
+	s.close()
 	print e
+	sys.exit()
 
 print "\nClosing Connection"
 s.close()                    # Close the socket

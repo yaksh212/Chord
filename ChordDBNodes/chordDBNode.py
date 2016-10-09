@@ -18,6 +18,8 @@ myID = 0
 myFingerTable = []
 mySuccessor = -1
 myPredecessor = -1
+mutex = Lock()
+readWriteMutex = Lock()
 
 def clientThreadStart(conn):
 
@@ -34,13 +36,19 @@ def clientThreadStart(conn):
 			dataFromClientValue = dataFromClient['VALUE']
 			reply = dataFromClient
 
+			mutex.acquire()
 			if util.isResponsibleForKeyID(keyID,myID,myPredecessor) or True:  #Forced True just to enter if condition (remove True after writing util.isResponsibleForKeyID method)
+				mutex.release()
 				if dataFromClientMethod == 'GET':
+					readWriteMutex.acquire()
 					reply = util.getFromDisk(keyID)
+					readWriteMutex.release()
 					reply = dataFromClient   #not required, just there to have some reply value (Remove this line after writing util.getFromDisk method)
 					pass
 				elif dataFromClientMethod == 'PUT':
+					readWriteMutex.acquire()
 					util.writeToDisk(keyID,dataFromClientValue)
+					readWriteMutex.release()
 					reply = 'PUT Successful'
 					pass
 				else:
@@ -48,6 +56,7 @@ def clientThreadStart(conn):
 			else:
 				try:
 					nextClosestNodeToKeyIP = util.getClosestNodeIP(keyID,myFingerTable)
+					mutex.release()
 					nextClosestNodeToKeyPort = 12415
 					newSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 					newSocket.bind(('127.0.0.1', 0))
@@ -59,24 +68,40 @@ def clientThreadStart(conn):
 					newSocket.close()
 				except:
 					# This should never happen, but just being safe
+					if mutex.locked():
+						mutex.release()
 					newSocket.close()
 					print "Closing newSocket because of Exception"
 
 			conn.send(json.dumps(reply))
 	except:
 		e = sys.exc_info()[0]
+		if readWriteMutex.locked():
+			readWriteMutex.release()
+		if mutex.locked():
+			mutex.release()
 		conn.close()
 		print "Closing Connection\n"
 
 def main():
 	HOST = '127.0.0.1'
 	PORT = 12417
-	myID = util.generateID(HOST)
-	myFingerTable = util.generateFingerTable(myID)
-	mySuccessor = util.getSuccessor(myFingerTable)
-	myPredecessor = util.getPredecessor(myID)
-	print myFingerTable,myPredecessor,mySuccessor
-	print "Server ID:",myID
+	
+	try:
+		global myID,mySuccessor,myPredecessor,myFingerTable
+		mutex.acquire()
+		myID = util.generateID(HOST)
+		util.generateConfFileList()
+		myFingerTable = util.generateFingerTable(myID)
+		mySuccessor = util.getSuccessor(myFingerTable)
+		myPredecessor = util.getPredecessor(myID)
+		mutex.release()
+		print "Server ID:",myID
+	except:
+		print "Initialization Failed, Node Shutting down.."
+		if mutex.locked():
+			mutex.release()
+		sys.exit()
 
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	print 'Socket created'

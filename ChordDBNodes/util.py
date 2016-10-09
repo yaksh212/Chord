@@ -37,7 +37,19 @@ def generateID(value):
 def getChordRingValue():
 	return m
 
-def generateFingerTable(nodeID):
+def getConfFileList():
+	return confFileList
+
+def removeFromConfFileList(nodeID):
+	global confFileList	
+	for pos in range(0,len(confFileList)):
+		if confFileList[pos][0] == nodeID:
+			del confFileList[pos]
+			break
+	return
+
+def generateConfFileList():
+	global confFileList
 	with open('testNodeIP.conf') as fp:
 		for line in fp:
 			if line:
@@ -45,6 +57,8 @@ def generateFingerTable(nodeID):
 				tempIP = line.split(' ')[1]
 				pair = (int(tempID),tempIP)
 				confFileList.append(pair)
+
+def generateFingerTable(nodeID):
 	fingerTable = []
 	for i in range(1,m+1):
 		startRange = (nodeID + pow(2,i-1)) % pow(2,m)

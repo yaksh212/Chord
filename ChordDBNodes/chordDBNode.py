@@ -70,11 +70,12 @@ def clientThreadStart(conn):
 
 def main():
 	HOST = '127.0.0.1'
-	PORT = 12415
+	PORT = 12417
 	myID = util.generateID(HOST)
 	myFingerTable = util.generateFingerTable(myID)
-	mySuccessor = util.getSuccessor(myID)
+	mySuccessor = util.getSuccessor(myFingerTable)
 	myPredecessor = util.getPredecessor(myID)
+	print myFingerTable,myPredecessor,mySuccessor
 	print "Server ID:",myID
 
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

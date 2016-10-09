@@ -30,7 +30,7 @@ print
 
 s = socket.socket()         # Create a socket object
 host = '127.0.0.1' 			# Get local machine name
-port = 12415                # Reserve a port for your service.
+port = 12417                # Reserve a port for your service.
 
 data = {}
 data['METHOD'] = method

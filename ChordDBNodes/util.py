@@ -9,6 +9,7 @@ import urllib
 import urllib2
 import time
 import select
+import os
 
 m = 6
 confFileList = []
@@ -87,7 +88,15 @@ def getClosestNodeIP(keyID,nodeFingerTable):
 	pass
 
 def getFromDisk(keyID):
-	pass
+    f = open(keyID, 'r')
+    keyValue = f.read()
+    f.close()
+    return keyValue
 
 def writeToDisk(keyID,keyValue):
-	pass
+    target = open(keyID, 'a')
+    target.write(keyValue)
+    target.write(os.linesep)
+    target.close()
+    return 
+

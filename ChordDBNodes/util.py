@@ -10,9 +10,11 @@ import urllib2
 import time
 import select
 import os
+import glob
 
 m = 6
 confFileList = []
+port = 12417
 
 def findSuccessorFromList(startID,confFileList):
 	lower = 0
@@ -127,4 +129,57 @@ def writeToDisk(keyID,keyValue,myID):
 	except Exception,e:
 		print str(e)
 	return
+
+#leaves cluster
+ def leaveCluster(myID, mySuccessor, myPredecessor):
+ 	global port
+ 	removeFromConfFileList(myID)
+
+ 	#remove yourself from successor's and predecessor's conf lists
+ 	json = createJson('REMOVE', myID, None)
+ 	sendData(json, mySuccessor[1], port)
+ 	sendData(json, myPredecessor[1], port)
+ 	transferFiles(mySuccessor)
+ 	pass
+
+#transfers all files to the next node
+def transferFiles(mySuccessor):
+	#if folder exists, transfer all data in directory
+	global port
+	if os.path.exists("data"):
+		for filename in glob.glob('*'):
+			value = getFromDisk(str(filename))
+			json = createJson('PUT', str(filename), value)
+			result = sendData(json, mySuccessor[1], port)
+			if not result:
+				print "Could not send ", str(filename)
+			else:
+				print "Sent ", str(filename)
+	pass
+
+def createJson(method, key, value):
+	data = {}
+	data['METHOD'] = method
+	data['KEY'] = key
+	data['VALUE'] = value
+	json = json.dumps(data)
+	return data
+
+def sendData(data, host, port):
+	try:
+		s.connect((host, port))
+		reply=(s.recv(1024))
+		print "Message from server: ", reply
+		s.send(data)
+		reply=json.loads(s.recv(1024))
+		print"Reply from Server:"
+		print reply
+		return True
+
+	except:
+		e = sys.exc_info()[0]
+		print "Closing Connection due to Exception"
+		s.close()
+		print e
+		return False
 

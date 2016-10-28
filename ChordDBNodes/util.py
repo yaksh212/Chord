@@ -88,15 +88,30 @@ def getClosestNodeIP(keyID,nodeFingerTable):
 	pass
 
 def getFromDisk(keyID):
-    f = open(keyID, 'r')
+    print "GTD Entered"
+    f = open(str(keyID), 'r')
     keyValue = f.read()
     f.close()
     return keyValue
 
 def writeToDisk(keyID,keyValue):
-    target = open(keyID, 'a')
-    target.write(keyValue)
-    target.write(os.linesep)
-    target.close()
-    return 
+	print "WTD entered"
+	print keyID,keyValue
+	try:
+		if not os.path.exists("data"):
+			os.makedirs("data")
+		path="data/"+str(keyID)
+		target = open(path, 'w+')
+	except Exception,e: 
+		print str(e)
+		print "Failed"
+	print "Target Acquired",keyID
+	print target,keyID,keyValue
+	try:
+		target.write(keyValue)
+		target.write(os.linesep)
+		target.close()
+	except Exception,e:
+		print str(e)
+	return
 

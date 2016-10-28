@@ -38,18 +38,26 @@ def clientThreadStart(conn):
 
 			mutex.acquire()
 			if util.isResponsibleForKeyID(keyID,myID,myPredecessor) or True:  #Forced True just to enter if condition (remove True after writing util.isResponsibleForKeyID method)
+				print "Entered"
 				mutex.release()
 				if dataFromClientMethod == 'GET':
+					print "Entered GET"
 					readWriteMutex.acquire()
 					reply = util.getFromDisk(keyID)
 					readWriteMutex.release()
 					reply = dataFromClient   #not required, just there to have some reply value (Remove this line after writing util.getFromDisk method)
+					print reply
 					pass
 				elif dataFromClientMethod == 'PUT':
+					print "Entered PUT"
 					readWriteMutex.acquire()
+					print "Mutex Acquired"
 					util.writeToDisk(keyID,dataFromClientValue)
+					print "Write to Disk performed"
 					readWriteMutex.release()
+					print "Mutex Released"
 					reply = 'PUT Successful'
+					print "reply Formulated"
 					pass
 				else:
 					reply['METHOD'] = 'Invalid METHOD'
@@ -72,7 +80,7 @@ def clientThreadStart(conn):
 						mutex.release()
 					newSocket.close()
 					print "Closing newSocket because of Exception"
-
+			print "Sending Reply MF"
 			conn.send(json.dumps(reply))
 	except:
 		e = sys.exc_info()[0]
@@ -85,7 +93,7 @@ def clientThreadStart(conn):
 
 def main():
 	HOST = '127.0.0.1'
-	PORT = 12417
+	PORT = 12422
 	
 	try:
 		global myID,mySuccessor,myPredecessor,myFingerTable

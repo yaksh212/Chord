@@ -34,34 +34,35 @@ def clientThreadStart(conn):
 
 			dataFromClientMethod = dataFromClient['METHOD']
 			dataFromClientValue = dataFromClient['VALUE']
+			dataFromClientKey = dataFromClient['KEY']
 			reply = dataFromClient
 
 			mutex.acquire()
 			if util.isResponsibleForKeyID(keyID,myID,myPredecessor) or True:  #Forced True just to enter if condition (remove True after writing util.isResponsibleForKeyID method)
-				print "Entered"
 				mutex.release()
 				if dataFromClientMethod == 'GET':
-					print "Entered GET"
 					readWriteMutex.acquire()
-					reply = util.getFromDisk(keyID.myID)
+					reply = util.getFromDisk(dataFromClientKey, myID)
 					readWriteMutex.release()
 					reply = dataFromClient   #not required, just there to have some reply value (Remove this line after writing util.getFromDisk method)
-					print reply
 					pass
 				elif dataFromClientMethod == 'PUT':
-					print "Entered PUT"
 					readWriteMutex.acquire()
-					print "Mutex Acquired"
 					try:
-						util.writeToDisk(keyID,dataFromClientValue,myID)
+						util.writeToDisk(dataFromClientKey,dataFromClientValue)
 					except Exception,e:
 						print str(e)
-					print "Write to Disk performed"
+					
 					readWriteMutex.release()
-					print "Mutex Released"
-					reply = 'PUT Successful'
-					print "reply Formulated"
 					pass
+				elif dataFromClientMethod == 'LEAVE':
+					readWriteMutex.acquire()
+					util.leaveCluster(myID, mySuccessor)
+					readWriteMutex.release()
+					pass
+				elif dataFromClientMethod == 'REMOVE':
+					util.removeFromConfFileList(dataFromClientKey)
+					util.generateFingerTable(myID)
 				else:
 					reply['METHOD'] = 'Invalid METHOD'
 			else:
@@ -83,7 +84,7 @@ def clientThreadStart(conn):
 						mutex.release()
 					newSocket.close()
 					print "Closing newSocket because of Exception"
-			print "Sending Reply MF"
+
 			conn.send(json.dumps(reply))
 	except:
 		e = sys.exc_info()[0]
@@ -96,7 +97,11 @@ def clientThreadStart(conn):
 
 def main():
 	HOST = '127.0.0.1'
+<<<<<<< c018fb498e53429c113a078f150a518fcfde6b21
 	PORT = 12420
+=======
+	PORT = 12417
+>>>>>>> Added logic for node leaving
 	
 	try:
 		global myID,mySuccessor,myPredecessor,myFingerTable

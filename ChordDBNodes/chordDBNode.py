@@ -43,7 +43,7 @@ def clientThreadStart(conn):
 				if dataFromClientMethod == 'GET':
 					print "Entered GET"
 					readWriteMutex.acquire()
-					reply = util.getFromDisk(keyID.myID)
+					reply = util.getFromDisk(keyID,myID)
 					readWriteMutex.release()
 					reply = dataFromClient   #not required, just there to have some reply value (Remove this line after writing util.getFromDisk method)
 					print reply

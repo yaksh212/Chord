@@ -43,7 +43,7 @@ def clientThreadStart(conn):
 				if dataFromClientMethod == 'GET':
 					print "Entered GET"
 					readWriteMutex.acquire()
-					reply = util.getFromDisk(keyID)
+					reply = util.getFromDisk(keyID.myID)
 					readWriteMutex.release()
 					reply = dataFromClient   #not required, just there to have some reply value (Remove this line after writing util.getFromDisk method)
 					print reply
@@ -52,7 +52,10 @@ def clientThreadStart(conn):
 					print "Entered PUT"
 					readWriteMutex.acquire()
 					print "Mutex Acquired"
-					util.writeToDisk(keyID,dataFromClientValue)
+					try:
+						util.writeToDisk(keyID,dataFromClientValue,myID)
+					except Exception,e:
+						print str(e)
 					print "Write to Disk performed"
 					readWriteMutex.release()
 					print "Mutex Released"
@@ -93,7 +96,7 @@ def clientThreadStart(conn):
 
 def main():
 	HOST = '127.0.0.1'
-	PORT = 12422
+	PORT = 12420
 	
 	try:
 		global myID,mySuccessor,myPredecessor,myFingerTable

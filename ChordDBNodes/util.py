@@ -87,20 +87,33 @@ def isResponsibleForKeyID(keyID,nodeID,predecessorID):
 def getClosestNodeIP(keyID,nodeFingerTable):
 	pass
 
-def getFromDisk(keyID):
-    print "GTD Entered"
-    f = open(str(keyID), 'r')
-    keyValue = f.read()
-    f.close()
-    return keyValue
+def getFromDisk(keyID,myID):
+	print "GTD Entered"
+	print myID
+	try:
+		dirPath = "data_" + str(myID)
+		if not os.path.exists(dirPath):
+			os.makedirs(dirPath)
+		path=dirPath+"/"+str(keyID)
 
-def writeToDisk(keyID,keyValue):
+		f = open(path, 'r')
+		keyValue = f.read()
+		f.close()
+	except Exception,e: 
+		print str(e)
+		print "Failed"
+
+	return keyValue
+
+def writeToDisk(keyID,keyValue,myID):
 	print "WTD entered"
+	print myID
 	print keyID,keyValue
 	try:
-		if not os.path.exists("data"):
-			os.makedirs("data")
-		path="data/"+str(keyID)
+		dirPath = "data_" + str(myID)
+		if not os.path.exists(dirPath):
+			os.makedirs(dirPath)
+		path=dirPath+"/"+str(keyID)
 		target = open(path, 'w+')
 	except Exception,e: 
 		print str(e)

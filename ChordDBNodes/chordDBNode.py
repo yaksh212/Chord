@@ -57,7 +57,7 @@ def clientThreadStart(conn):
 					pass
 				elif dataFromClientMethod == 'LEAVE':
 					readWriteMutex.acquire()
-					util.leaveCluster(myID, mySuccessor)
+					util.leaveCluster(myID, mySuccessor, myPredecessor)
 					readWriteMutex.release()
 					pass
 				elif dataFromClientMethod == 'REMOVE':
@@ -97,11 +97,7 @@ def clientThreadStart(conn):
 
 def main():
 	HOST = '127.0.0.1'
-<<<<<<< c018fb498e53429c113a078f150a518fcfde6b21
 	PORT = 12420
-=======
-	PORT = 12417
->>>>>>> Added logic for node leaving
 	
 	try:
 		global myID,mySuccessor,myPredecessor,myFingerTable

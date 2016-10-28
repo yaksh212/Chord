@@ -131,13 +131,14 @@ def writeToDisk(keyID,keyValue,myID):
 	return
 
 #leaves cluster
- def leaveCluster(myID, mySuccessor):
+ def leaveCluster(myID, mySuccessor, myPredecessor):
  	global port
  	removeFromConfFileList(myID)
 
- 	#remove yourself from successor's conf list
+ 	#remove yourself from successor's and predecessor's conf lists
  	json = createJson('REMOVE', myID, None)
  	sendData(json, mySuccessor[1], port)
+ 	sendData(json, myPredecessor[1], port)
  	transferFiles(mySuccessor)
  	pass
 

@@ -16,9 +16,8 @@ if len(sys.argv) < 2:
 	sys.exit()
 
 cmd = sys.argv[1] #toggle to use cmd or static key/value
-method = 'PUT'
-key = 'dummy_key'
-key = str(random.randint(0,100))
+method = 'LEAVE'
+key = 'ya'
 value = 'hello'
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
 

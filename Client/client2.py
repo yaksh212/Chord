@@ -6,7 +6,6 @@ import argparse
 import random
 import datetime
 import sys
-import hashlib
 
 if len(sys.argv) < 2:
 	print "Incorrect Usage"
@@ -16,7 +15,7 @@ if len(sys.argv) < 2:
 	sys.exit()
 
 cmd = sys.argv[1] #toggle to use cmd or static key/value
-method = 'PUT'
+method = 'GET'
 key = 'dummy_key'
 key = str(random.randint(0,100))
 value = 'hello'
@@ -39,7 +38,7 @@ data = {}
 data['METHOD'] = method
 data['KEY'] = key
 data['VALUE'] = value
-print 'keyID:', int(hashlib.md5(key).hexdigest(),16) % pow(2,6)
+
 try:
 	j_dump=json.dumps(data)
 	print "Connecting to Server.."

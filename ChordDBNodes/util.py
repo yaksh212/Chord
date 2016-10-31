@@ -51,6 +51,14 @@ def removeFromConfFileList(nodeID):
 			break
 	return
 
+def removeFromConfFileListByIP(nodeIP):
+	global confFileList	
+	for pos in range(0,len(confFileList)):
+		if confFileList[pos][1].strip('\n') == nodeIP:
+			del confFileList[pos]
+			break
+	return
+
 def generateConfFileList():
 	global confFileList
 	with open('testNodeIP.conf') as fp:
@@ -58,7 +66,7 @@ def generateConfFileList():
 			if line:
 				tempID = line.split(' ')[0]
 				tempIP = line.split(' ')[1]
-				pair = (int(tempID),str(tempIP))
+				pair = (int(tempID),str(tempIP).strip('\n'))
 				confFileList.append(pair)
 
 def generateFingerTable(nodeID):
@@ -98,7 +106,12 @@ def isResponsibleForKeyID(keyID,nodeID,predecessorID,successorID):
 		ret = True
 	return ret
 	
-def getClosestNodeIP(keyID,nodeFingerTable):
+def getClosestNodeIP(keyID,nodeID,nodeSuccessor,nodeFingerTable):
+	for pos in range(len(nodeFingerTable) - 1, -1,-1):
+		if nodeFingerTable[pos][0] <= keyID and nodeFingerTable[pos][0] > nodeID:
+			return nodeFingerTable[pos][1].strip('\n')
+
+	return nodeSuccessor
 	pass
 
 def getFromDisk(keyID,myID):
@@ -145,25 +158,40 @@ def writeToDisk(keyID,keyValue,myID):
 	return
 
 #leaves cluster
-def leaveCluster(myID, mySuccessor, myPredecessor):
+def leaveCluster(myID, mySuccessor, myPredecessor,nodeIP):
 	global port
 	print 'Leaving Cluster'
 	#remove yourself from successor's and predecessor's conf lists
 	jsond = createJson('REMOVE', myID, None)
 	if mySuccessor == myPredecessor:
 		print 'Informing predecessor & successor:', myPredecessor
-		sendData(jsond, mySuccessor, port)
+		s0 = connectToServer(mySuccessor,port,nodeIP)
+		if s0 != False:
+			sendData(jsond, mySuccessor, port,s0)
+			closeConnection(s0)
 	else:
 		print 'Informing predecessor:',myPredecessor,' & successor:', mySuccessor
-		sendData(jsond, mySuccessor, port)
-		sendData(jsond, myPredecessor, port)
-	
-	transferFiles(mySuccessor,myID)
+
+		s1 = connectToServer(mySuccessor,port,nodeIP)
+		if s1 != False:
+			sendData(jsond, mySuccessor, port,s1)
+			closeConnection(s1)
+
+		s2 = connectToServer(myPredecessor,port,nodeIP)
+		if s2 != False:
+			sendData(jsond, myPredecessor, port,s2)
+			closeConnection(s2)
+
+	s3 = connectToServer(mySuccessor,port,nodeIP)
+	if s3 != False:
+		transferFiles(mySuccessor,myID,s3)
+		closeConnection(s3)
+
 	return
 	pass
 
 #transfers all files to the next node
-def transferFiles(mySuccessor,myID):
+def transferFiles(mySuccessor,myID,s):
 	#if folder exists, transfer all data in directory
 	global port
 	print 'Initiating Transfering Files'
@@ -173,7 +201,7 @@ def transferFiles(mySuccessor,myID):
 			print 'Transfering f:', f
 			value = getFromDisk(str(f),myID)
 			jsond = createJson('PUTn', str(f), value)
-			result = sendData(jsond, mySuccessor, port)
+			result = sendData(jsond, mySuccessor, port,s)
 			if not result:
 				print "Could not send ", str(f)
 			else:
@@ -190,19 +218,33 @@ def createJson(method, key, value):
 	print 'Json Created'
 	return jsond
 
-def sendData(data, host, port):
+def connectToServer(host,port,nodeIP):
 	try:
-		print 'Connecting to Successor:',host,type(host)
+		print 'Connecting to Server:',host,type(host)
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		s.bind((nodeIP, 0))
 		s.connect((host, port))
-		print 'Connected to Successor:',host
+		print 'Connected to Server:',host	
+		return s
+	except:
+		e = sys.exc_info()[0]
+		print "Closing Connection due to Exception"
+		s.close()
+		print e
+		return False
+
+def closeConnection(s):
+	s.close()
+	return
+
+def sendData(data, host, port,s):
+	try:
 		reply=(s.recv(1024))
 		print "Message from server: ", reply
 		s.send(data)
 		reply=json.loads(s.recv(1024))
 		print"Reply from Server:"
 		print reply
-		s.close()
 		return True
 
 	except:

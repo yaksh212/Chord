@@ -31,7 +31,7 @@ print method,key,value
 print
 
 s = socket.socket()         # Create a socket object
-host = '127.0.0.1' 			# Get local machine name
+host = '172.16.100.17' 			# Get local machine name
 port = 12420                # Reserve a port for your service.
 
 data = {}

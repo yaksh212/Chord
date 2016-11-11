@@ -9,6 +9,7 @@ import urllib
 import urllib2
 import time
 import select
+import netifaces as ni
 import util
 import os
 from collections import Counter 
@@ -29,7 +30,7 @@ port = 12420
 
 def checkStatus():
 	try:
-		time.sleep(10)
+		time.sleep(20)
 		print "Entered checkStatus"
 		global myFingerTable,myPredecessor,mySuccessor,myID,myPredecessorIP,mySuccessorIP,myIP,seenBefore,port
 		while True:
@@ -137,7 +138,7 @@ def clientThreadStart(conn):
 					mutex.release()
 					nextClosestNodeToKeyPort = 12420
 					newSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-					newSocket.bind(('127.0.0.1', 0))
+					newSocket.bind((myIP, 0))
 					newSocket.connect((nextClosestNodeToKeyIP,nextClosestNodeToKeyPort))
 					welcomeMsg = newSocket.recv(1024) 	#just to maintain sequence of send/recv
 					jDump = json.dumps(dataFromClient)
@@ -162,7 +163,8 @@ def clientThreadStart(conn):
 		print "Closing Connection\n"
 
 def main():
-	HOST = '127.0.0.1'
+	ni.ifaddresses('eth0')
+	HOST = str(ni.ifaddresses('eth0')[2][0]['addr'])
 	PORT = 12420
 	
 	try:
@@ -170,6 +172,7 @@ def main():
 		mutex.acquire()
 		myIP = HOST
 		myID = util.generateID(HOST)
+		print 'myip:',HOST,myID
 		util.generateConfFileList()
 		myFingerTable = util.generateFingerTable(myID)
 		mySuccessor = util.getSuccessor(myFingerTable)

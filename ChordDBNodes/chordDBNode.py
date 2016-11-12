@@ -23,12 +23,22 @@ mySuccessor = -1
 myPredecessor = -1
 mySuccessorIP = None
 myPredecessorIP = None
-mutex = Lock()
-readWriteMutex = Lock()
+mutex = Lock() 					#mutex for global variables
+readWriteMutex = Lock()			#mutex for reading and writing to disk
 seenBefore = {}
-port = 12420 
+port = 12420 					#all nodes run on this port
 
 def checkStatus():
+	"""
+	Responsible for figuring out node Failures.
+	Checks the Status of other nodes present in this nodes
+	fingerTable. If a connection fails, that node is removed 
+	from the fingerTable and all necessary parameters are 
+	recomputed.
+
+	Raises:
+		SocketError: if connection fails for any reason
+	"""
 	try:
 		time.sleep(20)
 		print "Entered checkStatus"
@@ -40,11 +50,15 @@ def checkStatus():
 			for i in range(0,len(confList)):
 				host = confList[i][1]
 				if host == myIP:
+					#It'd be stupid to remove yourself from your FingerTable.
 					continue
 				try:
 					ns = util.connectToServer(host,port,myIP)
 				except:
+					#Failed to connect to host
 					ns = False
+
+				#if ns is false, remove host from fingerTable and recompute params
 				if ns == False:
 					util.removeFromConfFileListByIP(host)
 					myFingerTable = util.generateFingerTable(myID)
@@ -65,14 +79,28 @@ def checkStatus():
 		if mutex.locked():
 			mutex.release()
 		print "status thread dead"
-		start_new_thread(checkStatus,())
+		start_new_thread(checkStatus,())  		#restart statusThread, essential for figuring out node failures.
 
 def clientThreadStart(conn):
+	"""
+	Start function for the ChordDBNode threads. Handles the
+	GET,PUT,REMOVE and LEAVE requests. Responsible for initiating
+	ReadFrom or WriteTo Disk.
 
+	Args:
+		conn: the socket connection initiated with the client
+	Returns:
+		reply: either Key not found, Value for key in GET, node failure
+		       reason or echoed data from client on PUT
+	Raises:
+		SocketError: if connection fails at any time or sequence of send/recv
+			     not followed
+		TypeError: if data not correctly serialized or desearialized (JSON)
+	"""
 	try:		
 		while 1:
 			conn.send('Welcome to the ChordDB server 1.') #send only takes string
-			dataFromClient = json.loads(conn.recv(1024))
+			dataFromClient = json.loads(conn.recv(1024)) #read what the client sent
 			keyID = util.generateID(dataFromClient['KEY'])
 			print "keyID:",keyID
 			print "data from client:"
@@ -87,12 +115,13 @@ def clientThreadStart(conn):
 			if util.isResponsibleForKeyID(keyID,myID,myPredecessor,mySuccessor) or dataFromClientMethod == 'LEAVE' or dataFromClientMethod == 'REMOVE' or dataFromClientMethod == 'PUTn':  #Forced True just to enter if condition (remove True after writing util.isResponsibleForKeyID method)
 				print 'Responsible for Key ID: ',keyID
 				mutex.release()
+				#check if key value pair present on disk and return
 				if dataFromClientMethod == 'GET':
 					readWriteMutex.acquire()
 					reply = util.getFromDisk(dataFromClientKey, myID)
 					readWriteMutex.release()
-					# reply = dataFromClient   #not required, just there to have some reply value (Remove this line after writing util.getFromDisk method)
 					pass
+				#write or update key value pair on disk
 				elif dataFromClientMethod == 'PUT':
 					readWriteMutex.acquire()
 					try:
@@ -101,12 +130,13 @@ def clientThreadStart(conn):
 						print str(e)
 					readWriteMutex.release()
 					pass
+				#auxiliary method used to transfer keys during voluntary node leave
 				elif dataFromClientMethod == 'PUTn':
 					readWriteMutex.acquire()
 					util.writeToDisk(dataFromClientKey,dataFromClientValue,myID)
 					reply = 'OK'
 					readWriteMutex.release()
-
+				#initiate node leave 
 				elif dataFromClientMethod == 'LEAVE':
 					readWriteMutex.acquire()
 					util.leaveCluster(myID, mySuccessorIP, myPredecessorIP,myIP)
@@ -116,6 +146,7 @@ def clientThreadStart(conn):
 					conn.close()
 					os._exit(1)
 					pass
+				#remove the node whose id is in dataFromClientKey
 				elif dataFromClientMethod == 'REMOVE':		
 					print 'Removing Node from Cluster'
 					mutex.acquire()			
@@ -129,6 +160,8 @@ def clientThreadStart(conn):
 					print myFingerTable,mySuccessor,myPredecessor,mySuccessorIP,myPredecessorIP									
 				else:
 					reply['METHOD'] = 'Invalid METHOD'
+
+			#node not responsible for the key, initiate connection with next closest node in fingerTable
 			else:
 				try:
 					print 'Not Responsible for Key ID: ',keyID
@@ -219,4 +252,3 @@ def main():
 
 if __name__ == "__main__": 
 	main()
-	
